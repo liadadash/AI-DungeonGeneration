@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+*.VC.opendb
+*.VC.db
