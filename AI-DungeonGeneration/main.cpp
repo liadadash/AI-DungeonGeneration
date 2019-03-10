@@ -9,6 +9,9 @@
 #include "Node.h"
 #include "CompareNodes.h"
 #include "Parent.h"
+
+char mazeTxt[20] = "maze.txt";
+
 using namespace std;
 
 const int W = 600; // window width
@@ -30,7 +33,7 @@ const int MSIZE = 100;
 const double SQSIZE = 2.0 / MSIZE;
 
 int maze[MSIZE][MSIZE];
-bool bfs_started = false;
+
 Room all_rooms[NUM_ROOMS];
 
 // gray queue
@@ -42,9 +45,8 @@ priority_queue<Node, vector<Node>, CompareNodes> pq;
 
 Point2D start, target;
 
-
-
 void SetupMaze();
+void loadMazeDataFromFile(FILE *file);
 
 void init()
 {
@@ -58,7 +60,15 @@ void init()
 		for (j = 0; j < MSIZE; j++)
 			maze[i][j] = WALL;
 
-	SetupMaze();
+	FILE *file = fopen(mazeTxt, "r");
+
+	if (file != NULL) {
+		loadMazeDataFromFile(file);
+		fclose(file);
+	}
+	else {
+		SetupMaze();
+	}
 
 	glClearColor(0.7, 0.7, 0.7, 0);
 
@@ -117,7 +127,6 @@ void AddNewNode(Node current, int direction)
 			parents.push_back(Parent(tmp->GetPoint(), current.GetPoint(), true));
 		}
 	}
-
 }
 
 void RunAStar4Tunnels()
@@ -169,12 +178,9 @@ void RunAStar4Tunnels()
 			AddNewNode(current, LEFT);
 			// try to go RIGHT
 			AddNewNode(current, RIGHT);
-
 		}
-
 	} // while
 }
-
 
 void DigTunnels()
 {
@@ -202,6 +208,43 @@ void DigTunnels()
 			RunAStar4Tunnels();
 			delete tmp;
 		}
+}
+
+void loadMazeDataToFile()
+{
+	FILE *file = fopen(mazeTxt, "w");
+	for (int i = 0; i < MSIZE; i++)
+	{
+		Point2D p = all_rooms[i].GetCenter();
+		fprintf(file, "%d %d %d %d\n", p.GetX(), p.GetY(), all_rooms[i].GetWidth(), all_rooms[i].GetHeight());
+	}
+	for (int i = 0; i < MSIZE; i++)
+	{
+		for (int j = 0; j < MSIZE; j++)
+		{
+			fprintf(file, "%d ", maze[i][j]);
+		}
+		fprintf(file, "\n");
+	}
+}
+
+void loadMazeDataFromFile(FILE *file)
+{
+	int w, h, x, y;
+	for (int i = 0; i < MSIZE; i++)
+	{
+		fscanf(file, "%d %d %d %d\n", &x, &y, &w, &h);
+		all_rooms[i] = *(new Room(Point2D(x, y), w, h));
+	}
+	for (int i = 0; i < MSIZE; i++)
+	{
+		for (int j = 0; j < MSIZE; j++)
+		{
+			fscanf(file, "%d ", &(maze[i][j]));
+		}
+		fscanf(file, "\n");
+	}
+
 }
 
 void SetupMaze()
@@ -241,8 +284,8 @@ void SetupMaze()
 				maze[i][j] = SPACE;
 
 	}
-
 	DigTunnels();
+	loadMazeDataToFile();
 }
 
 void DrawMaze()
