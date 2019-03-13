@@ -9,6 +9,7 @@
 #include "Node.h"
 #include "CompareNodes.h"
 #include "Parent.h"
+#include "Store.h"
 
 char mazeTxt[20] = "maze.txt";
 
@@ -17,13 +18,19 @@ using namespace std;
 const int W = 600; // window width
 const int H = 600; // window height
 const int NUM_ROOMS = 10;
+const int NUM_HEALTH_STORE = 2;
+const int NUM_MUNITIONS = 2;
+const int MAX_BLOCKS_IN_ROOM = 3;
 
 const int SPACE = 1;
 const int WALL = 2;
-const int VISITED = 3;
-const int START = 4;
+const int HEALTH = 3;
+const int MUNITIONS = 4;
+const int BLOCK = 5;
+
 const int TARGET = 5;
 const int GRAY = 6;
+
 const int UP = 1;
 const int DOWN = 2;
 const int LEFT = 3;
@@ -35,6 +42,9 @@ const double SQSIZE = 2.0 / MSIZE;
 int maze[MSIZE][MSIZE];
 
 Room all_rooms[NUM_ROOMS];
+
+Store health_stores[NUM_HEALTH_STORE];
+Store munitions_stores[NUM_MUNITIONS];
 
 // gray queue
 vector <Point2D> gray;
@@ -247,6 +257,111 @@ void loadMazeDataFromFile(FILE *file)
 
 }
 
+void HealthStore()
+{
+	int setInRoom, h, w, storeX, storeY;
+	boolean canSet;
+	for (int i = 0; i < NUM_HEALTH_STORE; i++)
+	{
+		setInRoom = rand() % NUM_ROOMS;
+		canSet = true;
+		for (int j = 0; j < i; j++)
+		{
+			if (health_stores[j].GetRoomNumber() == setInRoom) {
+				canSet = false;
+				break;
+			}
+		}
+		if (canSet)
+		{
+			Room room = all_rooms[setInRoom];
+			h = room.GetHeight();
+			w = room.GetWidth();
+			storeX = (rand() % w) + room.GetCenter().GetX() - (w / 2);
+			storeY = (rand() % h) + room.GetCenter().GetY() - (h / 2);
+			if (maze[storeY][storeX] == BLOCK)
+			{
+				canSet = false;
+			}
+		}
+		if (canSet)
+		{
+			health_stores[i] = *(new Store(Point2D(storeX, storeY), setInRoom, health));
+			maze[storeY][storeX] = HEALTH;
+		}
+		else
+		{
+			i--;
+		}
+	}
+}
+
+void MunitionsStores()
+{
+	int setInRoom, h, w, storeX, storeY;
+	boolean canSet;
+	for (int i = 0; i < NUM_MUNITIONS; i++)
+	{
+		setInRoom = rand() % NUM_ROOMS;
+		canSet = true;
+		for (int j = 0; j < i; j++)
+		{
+			if (munitions_stores[j].GetRoomNumber() == setInRoom) {
+				canSet = false;
+				break;
+			}
+		}
+		if (canSet)
+		{
+			Room room = all_rooms[setInRoom];
+			h = room.GetHeight();
+			w = room.GetWidth();
+			storeX = (rand() % w) + room.GetCenter().GetX() - (w / 2);
+			storeY = (rand() % h) + room.GetCenter().GetY() - (h / 2);
+			munitions_stores[i] = *(new Store(Point2D(storeX, storeY), setInRoom, health));
+			maze[storeY][storeX] = MUNITIONS;
+		}
+		else
+		{
+			i--;
+		}
+	}
+}
+
+void CreateBlocks()
+{
+	int bloacks, h, w, blockH, blockW, startX, startY;
+	int left, right, top, bottom;
+
+	for (int i = 0; i < NUM_ROOMS; i++)
+	{
+		bloacks = rand() % MAX_BLOCKS_IN_ROOM + 1;
+		Room room = all_rooms[i];
+		h = room.GetHeight();
+		w = room.GetWidth();
+		for (int j = 0; j < bloacks; j++)
+		{
+			blockW = (rand() % (w / 2)) + 1;
+			blockH = (rand() % (h / 2)) + 1;
+			startX = (rand() % blockW) + room.GetCenter().GetX() - (w / 2) + 1;
+			startY = (rand() % blockH) + room.GetCenter().GetY() - (h / 2) + 1;
+
+			if (startY < 0) startY = 1;
+			if (startY >= MSIZE) startY = MSIZE - 2;
+			if (startX < 0) startX = 1;
+			if (startX >= MSIZE) startX = MSIZE - 2;
+
+			for (int sH = 0; sH < blockH; sH++)
+			{
+				for (int sW = 0; sW < blockW; sW++)
+				{
+					maze[sH + startY][sW + startX] = BLOCK;
+				}
+			}
+		}
+	}
+}
+
 void SetupMaze()
 {
 	int i, j, counter;
@@ -285,6 +400,9 @@ void SetupMaze()
 
 	}
 	DigTunnels();
+	CreateBlocks();
+	HealthStore();
+	MunitionsStores();
 	loadMazeDataToFile();
 }
 
@@ -303,14 +421,14 @@ void DrawMaze()
 			case SPACE:
 				glColor3d(1, 1, 1); // white;
 				break;
-			case VISITED:
+			case HEALTH:
 				glColor3d(0, 0.9, 0); // green;
 				break;
-			case START:
+			case MUNITIONS:
 				glColor3d(0, 0, 1); // blue;
 				break;
-			case TARGET:
-				glColor3d(1, 0, 0); // RED;
+			case BLOCK:
+				glColor3d(0, 0, 0); // BLACK;
 				break;
 			case GRAY:
 				glColor3d(1, .8, 0); // ORANGE;
@@ -325,10 +443,7 @@ void DrawMaze()
 			glVertex2d(j*SQSIZE - 1 - SQSIZE / 2, i*SQSIZE - 1 - SQSIZE / 2);
 			glEnd();
 		}
-
 }
-
-
 
 void display()
 {
@@ -346,6 +461,7 @@ void idle()
 
 void Menu(int choice)
 {
+
 }
 
 void main(int argc, char* argv[])
