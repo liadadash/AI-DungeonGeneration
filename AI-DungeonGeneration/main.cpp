@@ -15,11 +15,11 @@ char mazeTxt[20] = "maze.txt";
 
 using namespace std;
 
-const int W = 600; // window width
+const int W = 1000; // window width
 const int H = 600; // window height
-const int NUM_ROOMS = 10;
+const int NUM_ROOMS = 15;
 const int NUM_HEALTH_STORE = 2;
-const int NUM_MUNITIONS = 2;
+const int NUM_MUNITIONS_STORE = 2;
 const int MAX_BLOCKS_IN_ROOM = 3;
 
 const int SPACE = 1;
@@ -28,8 +28,8 @@ const int HEALTH = 3;
 const int MUNITIONS = 4;
 const int BLOCK = 5;
 
-const int TARGET = 5;
-const int GRAY = 6;
+const int PLAYER1 = 6;
+const int PLAYER2 = 7;
 
 const int UP = 1;
 const int DOWN = 2;
@@ -44,7 +44,7 @@ int maze[MSIZE][MSIZE];
 Room all_rooms[NUM_ROOMS];
 
 Store health_stores[NUM_HEALTH_STORE];
-Store munitions_stores[NUM_MUNITIONS];
+Store munitions_stores[NUM_MUNITIONS_STORE];
 
 // gray queue
 vector <Point2D> gray;
@@ -69,6 +69,7 @@ void init()
 	for (i = 0; i < MSIZE; i++)
 		for (j = 0; j < MSIZE; j++)
 			maze[i][j] = WALL;
+
 
 	FILE *file = fopen(mazeTxt, "r");
 
@@ -236,6 +237,14 @@ void loadMazeDataToFile()
 		}
 		fprintf(file, "\n");
 	}
+	for (int i = 0; i < NUM_HEALTH_STORE; i++)
+	{
+		fprintf(file, "%d %d %d \n", health_stores[i].GetRoomNumber(), health_stores[i].GetLocation().GetX(), health_stores[i].GetLocation().GetY());
+	}
+	for (int i = 0; i < NUM_MUNITIONS_STORE; i++)
+	{
+		fprintf(file, "%d %d %d\n", munitions_stores[i].GetRoomNumber(), munitions_stores[i].GetLocation().GetX(), munitions_stores[i].GetLocation().GetY());
+	}
 }
 
 void loadMazeDataFromFile(FILE *file)
@@ -244,7 +253,7 @@ void loadMazeDataFromFile(FILE *file)
 	for (int i = 0; i < MSIZE; i++)
 	{
 		fscanf(file, "%d %d %d %d\n", &x, &y, &w, &h);
-		all_rooms[i] = *(new Room(Point2D(x, y), w, h));
+		all_rooms[i] = Room(Point2D(x, y), w, h);
 	}
 	for (int i = 0; i < MSIZE; i++)
 	{
@@ -253,6 +262,18 @@ void loadMazeDataFromFile(FILE *file)
 			fscanf(file, "%d ", &(maze[i][j]));
 		}
 		fscanf(file, "\n");
+	}
+	int inRoom;
+	for (int i = 0; i < NUM_HEALTH_STORE; i++)
+	{
+		fscanf(file, "%d %d %d\n", &inRoom, &x, &y);
+		health_stores[i] = Store(Point2D(x, y), inRoom, health);
+	}
+	for (int i = 0; i < NUM_MUNITIONS_STORE; i++)
+	{
+		fscanf(file, "%d %d %d\n", &inRoom, &x, &y);
+		munitions_stores[i] = Store(Point2D(x, y), inRoom, munitions);
+
 	}
 
 }
@@ -300,7 +321,7 @@ void MunitionsStores()
 {
 	int setInRoom, h, w, storeX, storeY;
 	boolean canSet;
-	for (int i = 0; i < NUM_MUNITIONS; i++)
+	for (int i = 0; i < NUM_MUNITIONS_STORE; i++)
 	{
 		setInRoom = rand() % NUM_ROOMS;
 		canSet = true;
@@ -318,6 +339,13 @@ void MunitionsStores()
 			w = room.GetWidth();
 			storeX = (rand() % w) + room.GetCenter().GetX() - (w / 2);
 			storeY = (rand() % h) + room.GetCenter().GetY() - (h / 2);
+			if (maze[storeY][storeX] == BLOCK)
+			{
+				canSet = false;
+			}
+		}
+		if (canSet)
+		{
 			munitions_stores[i] = *(new Store(Point2D(storeX, storeY), setInRoom, health));
 			maze[storeY][storeX] = MUNITIONS;
 		}
@@ -346,11 +374,6 @@ void CreateBlocks()
 			startX = (rand() % blockW) + room.GetCenter().GetX() - (w / 2) + 1;
 			startY = (rand() % blockH) + room.GetCenter().GetY() - (h / 2) + 1;
 
-			if (startY < 0) startY = 1;
-			if (startY >= MSIZE) startY = MSIZE - 2;
-			if (startX < 0) startX = 1;
-			if (startX >= MSIZE) startX = MSIZE - 2;
-
 			for (int sH = 0; sH < blockH; sH++)
 			{
 				for (int sW = 0; sW < blockW; sW++)
@@ -378,13 +401,29 @@ void SetupMaze()
 			pr = new Room(Point2D(rand() % MSIZE,
 				rand() % MSIZE), 5 + rand() % 15, 5 + rand() % 25);
 			top = pr->GetCenter().GetY() - pr->GetHeight() / 2;
-			if (top < 0) top = 0;
+			if (top < 0)
+			{
+				isValidRoom = false;
+				continue;
+			}
 			bottom = pr->GetCenter().GetY() + pr->GetHeight() / 2;
-			if (bottom >= MSIZE) bottom = MSIZE - 1;
+			if (bottom >= MSIZE)
+			{
+				isValidRoom = false;
+				continue;
+			}
 			left = pr->GetCenter().GetX() - pr->GetWidth() / 2;
-			if (left < 0) left = 0;
+			if (left < 0)
+			{
+				isValidRoom = false;
+				continue;
+			}
 			right = pr->GetCenter().GetX() + pr->GetWidth() / 2;
-			if (right >= MSIZE) right = MSIZE - 1;
+			if (right >= MSIZE)
+			{
+				isValidRoom = false;
+				continue;
+			}
 
 			isValidRoom = true;
 			for (i = 0; i < counter && isValidRoom; i++)
@@ -425,13 +464,16 @@ void DrawMaze()
 				glColor3d(0, 0.9, 0); // green;
 				break;
 			case MUNITIONS:
-				glColor3d(0, 0, 1); // blue;
+				glColor3d(1, .8, 0); //ORANGE;
 				break;
 			case BLOCK:
 				glColor3d(0, 0, 0); // BLACK;
 				break;
-			case GRAY:
-				glColor3d(1, .8, 0); // ORANGE;
+			case PLAYER1:
+				glColor3d(0, 0, 1); // BLUE;
+				break;
+			case PLAYER2:
+				glColor3d(1, 0, 0); // RED;
 				break;
 
 			}
