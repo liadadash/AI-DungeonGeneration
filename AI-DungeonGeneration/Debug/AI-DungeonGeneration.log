@@ -1,26 +1,27 @@
 ﻿  main.cpp
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(84): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(74): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(83): warning C4305: 'argument': truncation from 'double' to 'GLclampf'
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(67): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(205): note: see declaration of 'fopen'
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(64): warning C4101: 'pt': unreferenced local variable
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(146): warning C4101: 'tmp': unreferenced local variable
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(151): warning C4101: 'weight': unreferenced local variable
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(147): warning C4101: 'pt': unreferenced local variable
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(226): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(57): warning C4101: 'pt': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(150): warning C4101: 'tmp': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(155): warning C4101: 'weight': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(151): warning C4101: 'pt': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(204): warning C4101: 'found': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(233): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(205): note: see declaration of 'fopen'
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(255): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(263): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(1193): note: see declaration of 'fscanf'
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(262): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(270): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(1193): note: see declaration of 'fscanf'
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(264): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(272): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(1193): note: see declaration of 'fscanf'
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(269): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(277): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(1193): note: see declaration of 'fscanf'
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(274): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(282): warning C4996: 'fscanf': This function or variable may be unsafe. Consider using fscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
   c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\stdio.h(1193): note: see declaration of 'fscanf'
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(362): warning C4101: 'bottom': unreferenced local variable
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(362): warning C4101: 'left': unreferenced local variable
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(362): warning C4101: 'top': unreferenced local variable
-d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(362): warning C4101: 'right': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(370): warning C4101: 'bottom': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(370): warning C4101: 'left': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(370): warning C4101: 'top': unreferenced local variable
+d:\projects\visual studio\ai-dungeongeneration\ai-dungeongeneration\main.cpp(370): warning C4101: 'right': unreferenced local variable
   AI-DungeonGeneration.vcxproj -> D:\Projects\Visual studio\AI-DungeonGeneration\Debug\AI-DungeonGeneration.exe
   AI-DungeonGeneration.vcxproj -> D:\Projects\Visual studio\AI-DungeonGeneration\Debug\AI-DungeonGeneration.pdb (Full PDB)

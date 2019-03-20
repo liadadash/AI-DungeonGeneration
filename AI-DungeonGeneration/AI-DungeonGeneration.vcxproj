@@ -145,18 +145,27 @@
   <ItemGroup>
     <ClCompile Include="CompareNodes.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MazeMap.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Parent.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="Point2D.cpp" />
     <ClCompile Include="Room.cpp" />
+    <ClCompile Include="RoomMap.cpp" />
+    <ClCompile Include="RoomMapNode.cpp" />
     <ClCompile Include="Store.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompareNodes.h" />
+    <ClInclude Include="Const.h" />
+    <ClInclude Include="MazeMap.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Parent.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="Point2D.h" />
     <ClInclude Include="Room.h" />
+    <ClInclude Include="RoomMap.h" />
+    <ClInclude Include="RoomMapNode.h" />
     <ClInclude Include="Store.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -10,6 +10,8 @@
 #include "CompareNodes.h"
 #include "Parent.h"
 #include "Store.h"
+#include "MazeMap.h"
+#include "Const.h"
 
 char mazeTxt[20] = "maze.txt";
 
@@ -17,31 +19,20 @@ using namespace std;
 
 const int W = 1000; // window width
 const int H = 600; // window height
-const int NUM_ROOMS = 15;
-const int NUM_HEALTH_STORE = 2;
-const int NUM_MUNITIONS_STORE = 2;
+const int NUM_ROOMS = 5;
 const int MAX_BLOCKS_IN_ROOM = 3;
-
-const int SPACE = 1;
-const int WALL = 2;
-const int HEALTH = 3;
-const int MUNITIONS = 4;
-const int BLOCK = 5;
 
 const int PLAYER1 = 6;
 const int PLAYER2 = 7;
 
-const int UP = 1;
-const int DOWN = 2;
-const int LEFT = 3;
-const int RIGHT = 4;
-
-const int MSIZE = 100;
 const double SQSIZE = 2.0 / MSIZE;
 
 int maze[MSIZE][MSIZE];
 
-Room all_rooms[NUM_ROOMS];
+Room all_rooms[2 * NUM_ROOMS];
+MazeMap mazeMap;
+
+int numberOfRoom = NUM_ROOMS;
 
 Store health_stores[NUM_HEALTH_STORE];
 Store munitions_stores[NUM_MUNITIONS_STORE];
@@ -57,6 +48,8 @@ Point2D start, target;
 
 void SetupMaze();
 void loadMazeDataFromFile(FILE *file);
+void SetPlayer();
+void CreateGameMap();
 
 void init()
 {
@@ -73,6 +66,9 @@ void init()
 
 	FILE *file = fopen(mazeTxt, "r");
 
+	for (i = 0; i < NUM_ROOMS; i++)
+		mazeMap.AddRoom();
+
 	if (file != NULL) {
 		loadMazeDataFromFile(file);
 		fclose(file);
@@ -81,9 +77,17 @@ void init()
 		SetupMaze();
 	}
 
+	CreateGameMap();
+
+	SetPlayer();
 	glClearColor(0.7, 0.7, 0.7, 0);
 
 	glOrtho(-1, 1, -1, 1, -1, 1);
+}
+
+void SetPlayer()
+{
+
 }
 
 void AddNewNode(Node current, int direction)
@@ -140,7 +144,7 @@ void AddNewNode(Node current, int direction)
 	}
 }
 
-void RunAStar4Tunnels()
+void RunAStar4Tunnels(int fromRoom, int toRoom)
 {
 	Node current;
 	Node* tmp;
@@ -162,6 +166,7 @@ void RunAStar4Tunnels()
 			// go back to start and change WALL to SPACE
 			itr = find(parents.begin(), parents.end(),
 				Parent(current.GetPoint(), current.GetPoint(), true));
+			Point2D p;
 			while (itr->HasParent())
 			{
 				Point2D tmp_prev = itr->GetPrev();
@@ -196,8 +201,9 @@ void RunAStar4Tunnels()
 void DigTunnels()
 {
 	int i, j;
-
+	bool found;
 	for (i = 0; i < NUM_ROOMS; i++)
+	{
 		for (j = i + 1; j < NUM_ROOMS; j++)
 		{
 			start = all_rooms[i].GetCenter();
@@ -216,9 +222,10 @@ void DigTunnels()
 			parents.clear();
 			parents.push_back(Parent(tmp->GetPoint(),
 				tmp->GetPoint(), false));
-			RunAStar4Tunnels();
+			RunAStar4Tunnels(i, j);
 			delete tmp;
 		}
+	}
 }
 
 void loadMazeDataToFile()
@@ -245,6 +252,7 @@ void loadMazeDataToFile()
 	{
 		fprintf(file, "%d %d %d\n", munitions_stores[i].GetRoomNumber(), munitions_stores[i].GetLocation().GetX(), munitions_stores[i].GetLocation().GetY());
 	}
+	fclose(file);
 }
 
 void loadMazeDataFromFile(FILE *file)
@@ -308,7 +316,7 @@ void HealthStore()
 		if (canSet)
 		{
 			health_stores[i] = *(new Store(Point2D(storeX, storeY), setInRoom, health));
-			maze[storeY][storeX] = HEALTH;
+			maze[storeY][storeX] = HEALTH_COLOR;
 		}
 		else
 		{
@@ -346,8 +354,8 @@ void MunitionsStores()
 		}
 		if (canSet)
 		{
-			munitions_stores[i] = *(new Store(Point2D(storeX, storeY), setInRoom, health));
-			maze[storeY][storeX] = MUNITIONS;
+			munitions_stores[i] = *(new Store(Point2D(storeX, storeY), setInRoom, munitions));
+			maze[storeY][storeX] = MUNITIONS_COLOR;
 		}
 		else
 		{
@@ -385,21 +393,218 @@ void CreateBlocks()
 	}
 }
 
+bool MoreThanOneConn(int x, int y)
+{
+	int count = 0;;
+	if (x - 1 > 0 && maze[y][x - 1] == SPACE)
+		count++;
+	if (y - 1 > 0 && maze[y - 1][x] == SPACE)
+		count++;
+	if (x + 1 < MSIZE - 1 && maze[y][x + 1] == SPACE)
+		count++;
+	if (y + 1 < MSIZE - 1 && maze[y + 1][x] == SPACE)
+		count++;
+	if (count > 2)
+		return true;
+	return false;
+}
+
+int FindRoom(int *x, int *y, int direction)
+{
+	bool found = false;
+	do {
+		switch (direction)
+		{
+		case UP:
+			*y = *y + 1;
+			if ((*y) + 1 > MSIZE - 1 || maze[(*y) + 1][*x] != SPACE)
+			{
+				if ((*x) - 1 > 0 && maze[*y][(*x) - 1] == SPACE)
+					direction = LEFT;
+				else
+					direction = RIGHT;
+			}
+			break;
+		case DOWN:
+			*y = *y - 1;
+			if ((*y) - 1 < 0 || maze[(*y) - 1][*x] != SPACE)
+			{
+				if ((*x) - 1 > 0 && maze[*y][(*x) - 1] == SPACE)
+					direction = LEFT;
+				else
+					direction = RIGHT;
+			}
+			break;
+		case RIGHT:
+			*x = *x + 1;
+			if ((*x) + 1 > MSIZE - 1 || maze[*y][(*x) + 1] != SPACE)
+			{
+				if ((*y) - 1 > 0 && maze[(*y) - 1][*x] == SPACE)
+					direction = DOWN;
+				else
+					direction = UP;
+			}
+			break;
+		case LEFT:
+			*x = *x - 1;
+			if ((*x) - 1 < 0 || maze[*y][(*x) - 1] != SPACE)
+			{
+				if ((*y) - 1 > 0 && maze[(*y) - 1][*x] == SPACE)
+					direction = DOWN;
+				else
+					direction = UP;
+			}
+			break;
+		}
+		found = MoreThanOneConn(*x, *y);
+	} while (!found);
+	int roomNum = -1;
+	for (int i = 0; i < numberOfRoom; i++)
+	{
+		if (all_rooms[i].IsInRoom(*x, *y))
+		{
+			roomNum = i;
+			break;
+		}
+	}
+	return roomNum;
+}
+
+void AddRoom(int x, int y)
+{
+	all_rooms[numberOfRoom++] = Room(Point2D(x, y), 1, 1);
+}
+
+void roomColor(int index)
+{
+	Room r = all_rooms[index];
+	for (int i = 0; i < r.GetHeight(); i++)
+	{
+		for (int j = 0; j < r.GetWidth(); j++)
+		{
+			maze[r.GetCenter().GetY() - r.GetHeight() / 2 + i][r.GetCenter().GetX() - r.GetWidth() / 2 + j] = PLAYER1;
+		}
+	}
+}
+
+void printMap()
+{
+	roomColor(0);
+	for (int i = 0; i < numberOfRoom; i++)
+	{
+		for (int j = 0; j < mazeMap.GetRoom(i).GetNumOfConn(); j++)
+		{
+			RoomMapNode r = mazeMap.GetRoom(i).GetConnectedRooms().at(j);
+			printf("%d -fromPoint: %d %d, toPoint: %d %d  ,direction: %d , toRoom: %d \n", i, r.GetFromPoint().GetX(), r.GetFromPoint().GetY(),
+				r.GetToPoint().GetX(), r.GetToPoint().GetY(), r.GetDirection(), r.GetToRoom());
+		}
+	}
+}
+
+void CreateGameMap()
+{
+	int x, y, roomNum, outX, outY, direction;
+	Room room;
+	for (int i = 0; i < numberOfRoom; i++)
+	{
+		room = all_rooms[i];
+		x = room.GetCenter().GetX() - room.GetWidth() / 2;
+		y = room.GetCenter().GetY() + room.GetHeight() / 2;
+		for (int j = 0; j < room.GetWidth(); j++)//UP
+		{
+			if (y + 1 < MSIZE - 1 && maze[y + 1][x + j] == SPACE)
+			{
+				outX = x + j;
+				outY = y;
+				direction = UP;
+				roomNum = FindRoom(&outX, &outY, direction);
+				if (roomNum == -1)
+				{
+					AddRoom(outX, outY);
+					roomNum = mazeMap.AddRoom();
+				}
+				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x + j, y), Point2D(outX, outY), roomNum, UP));
+			}
+		}
+		x = room.GetCenter().GetX() - room.GetWidth() / 2;
+		y = room.GetCenter().GetY() - room.GetHeight() / 2;
+		for (int j = 0; j < room.GetWidth(); j++)//DOWN
+		{
+			if (y - 1 > 0 && maze[y - 1][x + j] == SPACE)
+			{
+				outX = x + j;
+				outY = y;
+				direction = DOWN;
+				roomNum = FindRoom(&outX, &outY, direction);
+				if (roomNum == -1)
+				{
+					AddRoom(outX, outY);
+					roomNum = mazeMap.AddRoom();
+				}
+				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x + j, y), Point2D(outX, outY), roomNum, DOWN));
+			}
+		}
+		x = room.GetCenter().GetX() - room.GetWidth() / 2;
+		y = room.GetCenter().GetY() - room.GetHeight() / 2;
+		for (int j = 0; j < room.GetHeight(); j++)//LEFT
+		{
+			if (x - 1 > 0 && maze[y + j][x - 1] == SPACE)
+			{
+				outX = x;
+				outY = y + j;
+				direction = LEFT;
+				roomNum = FindRoom(&outX, &outY, direction);
+				if (roomNum == -1)
+				{
+					AddRoom(outX, outY);
+					roomNum = mazeMap.AddRoom();
+				}
+				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x, y + j), Point2D(outX, outY), roomNum, LEFT));
+			}
+		}
+		x = room.GetCenter().GetX() + room.GetWidth() / 2;
+		y = room.GetCenter().GetY() - room.GetHeight() / 2;
+		for (int j = 0; j < room.GetHeight(); j++)//RIGHT
+		{
+			if (x + 1 < MSIZE - 1 && maze[y + j][x + 1] == SPACE)
+			{
+				outX = x;
+				outY = y + j;
+				direction = RIGHT;
+				roomNum = FindRoom(&outX, &outY,direction);
+				if (roomNum == -1)
+				{
+					AddRoom(outX, outY);
+					roomNum = mazeMap.AddRoom();
+				}
+				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x, y + j), Point2D(outX, outY), roomNum, RIGHT));
+			}
+		}
+	}
+	printMap();
+}
+
 void SetupMaze()
 {
 	int i, j, counter;
 	int left, right, top, bottom;
 	bool isValidRoom;
 	Room* pr = NULL;
-
+	int w, h;
 	for (counter = 0; counter < NUM_ROOMS; counter++)
 	{
 		// create room
 		do
 		{
 			free(pr);
+			w = 5 + rand() % 15;
+			h = 5 + rand() % 25;
+			if (w % 2 == 0)
+				w++;
+			if (h % 2 == 0)
+				h++;
 			pr = new Room(Point2D(rand() % MSIZE,
-				rand() % MSIZE), 5 + rand() % 15, 5 + rand() % 25);
+				rand() % MSIZE), w, h);
 			top = pr->GetCenter().GetY() - pr->GetHeight() / 2;
 			if (top < 0)
 			{
@@ -460,10 +665,10 @@ void DrawMaze()
 			case SPACE:
 				glColor3d(1, 1, 1); // white;
 				break;
-			case HEALTH:
+			case HEALTH_COLOR:
 				glColor3d(0, 0.9, 0); // green;
 				break;
-			case MUNITIONS:
+			case MUNITIONS_COLOR:
 				glColor3d(1, .8, 0); //ORANGE;
 				break;
 			case BLOCK:

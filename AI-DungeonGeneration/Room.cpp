@@ -41,7 +41,13 @@ int Room::GetHeight()
 
 bool Room::IsOverlap(const Room& other)
 {
-	return abs(center.GetX()-other.GetCenter().GetX())
-		< (width+other.width)/2+5 && abs(center.GetY() - 
-			other.GetCenter().GetY()) < (height+other.height)/2+5  ;
+	return abs(center.GetX() - other.GetCenter().GetX())
+		< (width + other.width) / 2 + 5 && abs(center.GetY() -
+			other.GetCenter().GetY()) < (height + other.height) / 2 + 5;
+}
+
+bool Room::IsInRoom(int x, int y)
+{
+	return ((center.GetX() - (width / 2)) <= x) && ((center.GetY() - (height / 2)) <= y)
+			&& ((center.GetX() + (width / 2)) >= x) && ((center.GetY() + (height / 2)) >= y);
 }
