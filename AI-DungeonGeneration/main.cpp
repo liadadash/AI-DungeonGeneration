@@ -12,6 +12,7 @@
 #include "Store.h"
 #include "MazeMap.h"
 #include "Const.h"
+#include "Player.h"
 
 char mazeTxt[20] = "maze.txt";
 
@@ -19,11 +20,13 @@ using namespace std;
 
 const int W = 1000; // window width
 const int H = 600; // window height
-const int NUM_ROOMS = 5;
+const int NUM_ROOMS = 15;
 const int MAX_BLOCKS_IN_ROOM = 3;
 
 const int PLAYER1 = 6;
 const int PLAYER2 = 7;
+
+const int NUM_PLAYERS = 2;
 
 const double SQSIZE = 2.0 / MSIZE;
 
@@ -31,6 +34,7 @@ int maze[MSIZE][MSIZE];
 
 Room all_rooms[2 * NUM_ROOMS];
 MazeMap mazeMap;
+Player players[NUM_PLAYERS];
 
 int numberOfRoom = NUM_ROOMS;
 
@@ -87,7 +91,46 @@ void init()
 
 void SetPlayer()
 {
+	int setInRoom[NUM_PLAYERS], w, h, x, y;
+	boolean canSet;
+	Point2D points[NUM_PLAYERS];
+	for (int i = 0; i < NUM_PLAYERS; i++)
+	{
+		setInRoom[i] = rand() % NUM_ROOMS;
+		canSet = true;
 
+		for (int j = 0; j < i; j++)
+		{
+			if (setInRoom[j] == setInRoom[i]) {
+				canSet = false;
+				break;
+			}
+		}
+		if (canSet)
+		{
+			Room room = all_rooms[setInRoom[i]];
+			h = room.GetHeight();
+			w = room.GetWidth();
+			x = (rand() % w) + room.GetCenter().GetX() - (w / 2);
+			y = (rand() % h) + room.GetCenter().GetY() - (h / 2);
+			if (maze[y][x] != SPACE)
+			{
+				canSet = false;
+			}
+		}
+		if (canSet)
+		{
+			points[i] = Point2D(x, y);
+			maze[y][x] = PLAYER1 + i;
+		}
+		else
+		{
+			i--;
+		}
+	}
+
+	players[0] = Player(points[0], setInRoom[0], points[1], setInRoom[1], PLAYER1);
+	players[1] = Player(points[1], setInRoom[1], points[0], setInRoom[0], PLAYER2);
 }
 
 void AddNewNode(Node current, int direction)
@@ -281,9 +324,7 @@ void loadMazeDataFromFile(FILE *file)
 	{
 		fscanf(file, "%d %d %d\n", &inRoom, &x, &y);
 		munitions_stores[i] = Store(Point2D(x, y), inRoom, munitions);
-
 	}
-
 }
 
 void HealthStore()
@@ -475,31 +516,31 @@ void AddRoom(int x, int y)
 	all_rooms[numberOfRoom++] = Room(Point2D(x, y), 1, 1);
 }
 
-void roomColor(int index)
-{
-	Room r = all_rooms[index];
-	for (int i = 0; i < r.GetHeight(); i++)
-	{
-		for (int j = 0; j < r.GetWidth(); j++)
-		{
-			maze[r.GetCenter().GetY() - r.GetHeight() / 2 + i][r.GetCenter().GetX() - r.GetWidth() / 2 + j] = PLAYER1;
-		}
-	}
-}
-
-void printMap()
-{
-	roomColor(0);
-	for (int i = 0; i < numberOfRoom; i++)
-	{
-		for (int j = 0; j < mazeMap.GetRoom(i).GetNumOfConn(); j++)
-		{
-			RoomMapNode r = mazeMap.GetRoom(i).GetConnectedRooms().at(j);
-			printf("%d -fromPoint: %d %d, toPoint: %d %d  ,direction: %d , toRoom: %d \n", i, r.GetFromPoint().GetX(), r.GetFromPoint().GetY(),
-				r.GetToPoint().GetX(), r.GetToPoint().GetY(), r.GetDirection(), r.GetToRoom());
-		}
-	}
-}
+//void roomColor(int index)
+//{
+//	Room r = all_rooms[index];
+//	for (int i = 0; i < r.GetHeight(); i++)
+//	{
+//		for (int j = 0; j < r.GetWidth(); j++)
+//		{
+//			maze[r.GetCenter().GetY() - r.GetHeight() / 2 + i][r.GetCenter().GetX() - r.GetWidth() / 2 + j] = PLAYER1;
+//		}
+//	}
+//}
+//
+//void printMap()
+//{
+//	roomColor(0);
+//	for (int i = 0; i < numberOfRoom; i++)
+//	{
+//		for (int j = 0; j < mazeMap.GetRoom(i).GetNumOfConn(); j++)
+//		{
+//			RoomMapNode r = mazeMap.GetRoom(i).GetConnectedRooms().at(j);
+//			printf("%d -fromPoint: %d %d, toPoint: %d %d  ,direction: %d , toRoom: %d \n", i, r.GetFromPoint().GetX(), r.GetFromPoint().GetY(),
+//				r.GetToPoint().GetX(), r.GetToPoint().GetY(), r.GetDirection(), r.GetToRoom());
+//		}
+//	}
+//}
 
 void CreateGameMap()
 {
@@ -523,7 +564,7 @@ void CreateGameMap()
 					AddRoom(outX, outY);
 					roomNum = mazeMap.AddRoom();
 				}
-				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x + j, y), Point2D(outX, outY), roomNum, UP));
+				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x + j, y), Point2D(outX, outY),i, roomNum, UP));
 			}
 		}
 		x = room.GetCenter().GetX() - room.GetWidth() / 2;
@@ -541,7 +582,7 @@ void CreateGameMap()
 					AddRoom(outX, outY);
 					roomNum = mazeMap.AddRoom();
 				}
-				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x + j, y), Point2D(outX, outY), roomNum, DOWN));
+				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x + j, y), Point2D(outX, outY), i, roomNum, DOWN));
 			}
 		}
 		x = room.GetCenter().GetX() - room.GetWidth() / 2;
@@ -559,7 +600,7 @@ void CreateGameMap()
 					AddRoom(outX, outY);
 					roomNum = mazeMap.AddRoom();
 				}
-				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x, y + j), Point2D(outX, outY), roomNum, LEFT));
+				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x, y + j), Point2D(outX, outY), i, roomNum, LEFT));
 			}
 		}
 		x = room.GetCenter().GetX() + room.GetWidth() / 2;
@@ -571,17 +612,16 @@ void CreateGameMap()
 				outX = x;
 				outY = y + j;
 				direction = RIGHT;
-				roomNum = FindRoom(&outX, &outY,direction);
+				roomNum = FindRoom(&outX, &outY, direction);
 				if (roomNum == -1)
 				{
 					AddRoom(outX, outY);
 					roomNum = mazeMap.AddRoom();
 				}
-				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x, y + j), Point2D(outX, outY), roomNum, RIGHT));
+				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x, y + j), Point2D(outX, outY), i, roomNum, RIGHT));
 			}
 		}
 	}
-	printMap();
 }
 
 void SetupMaze()
@@ -725,7 +765,6 @@ void main(int argc, char* argv[])
 
 	glutCreateMenu(Menu);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
-
 
 	glutMainLoop();
 }
