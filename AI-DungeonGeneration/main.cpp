@@ -33,8 +33,10 @@ const double SQSIZE = 2.0 / MSIZE;
 int maze[MSIZE][MSIZE];
 
 Room all_rooms[2 * NUM_ROOMS];
-MazeMap mazeMap;
-Player players[NUM_PLAYERS];
+MazeMap *mazeMap;
+Player *players[NUM_PLAYERS];
+
+int playerTurn = 0;
 
 int numberOfRoom = NUM_ROOMS;
 
@@ -55,6 +57,8 @@ void loadMazeDataFromFile(FILE *file);
 void SetPlayer();
 void CreateGameMap();
 
+bool play = false;
+
 void init()
 {
 	int i, j;
@@ -71,7 +75,7 @@ void init()
 	FILE *file = fopen(mazeTxt, "r");
 
 	for (i = 0; i < NUM_ROOMS; i++)
-		mazeMap.AddRoom();
+		mazeMap->AddRoom();
 
 	if (file != NULL) {
 		loadMazeDataFromFile(file);
@@ -93,7 +97,6 @@ void SetPlayer()
 {
 	int setInRoom[NUM_PLAYERS], w, h, x, y;
 	boolean canSet;
-	Point2D points[NUM_PLAYERS];
 	for (int i = 0; i < NUM_PLAYERS; i++)
 	{
 		setInRoom[i] = rand() % NUM_ROOMS;
@@ -120,17 +123,17 @@ void SetPlayer()
 		}
 		if (canSet)
 		{
-			points[i] = Point2D(x, y);
-			maze[y][x] = PLAYER1 + i;
+			players[i] = new Player(Point2D(x, y), setInRoom[i], PLAYER1 + i);
 		}
 		else
 		{
 			i--;
 		}
 	}
-
-	players[0] = Player(points[0], setInRoom[0], points[1], setInRoom[1], PLAYER1);
-	players[1] = Player(points[1], setInRoom[1], points[0], setInRoom[0], PLAYER2);
+	for (int i = 0; i < NUM_PLAYERS; i++)
+	{
+		players[i]->setEnemy(players[NUM_PLAYERS - 1 - i]);
+	}
 }
 
 void AddNewNode(Node current, int direction)
@@ -562,9 +565,9 @@ void CreateGameMap()
 				if (roomNum == -1)
 				{
 					AddRoom(outX, outY);
-					roomNum = mazeMap.AddRoom();
+					roomNum = mazeMap->AddRoom();
 				}
-				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x + j, y), Point2D(outX, outY),i, roomNum, UP));
+				mazeMap->AddNodeToRoom(i, new RoomMapNode(new Point2D(x + j, y), new Point2D(outX, outY), i, roomNum, UP));
 			}
 		}
 		x = room.GetCenter().GetX() - room.GetWidth() / 2;
@@ -580,9 +583,9 @@ void CreateGameMap()
 				if (roomNum == -1)
 				{
 					AddRoom(outX, outY);
-					roomNum = mazeMap.AddRoom();
+					roomNum = mazeMap->AddRoom();
 				}
-				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x + j, y), Point2D(outX, outY), i, roomNum, DOWN));
+				mazeMap->AddNodeToRoom(i,new RoomMapNode(new Point2D(x + j, y),new Point2D(outX, outY), i, roomNum, DOWN));
 			}
 		}
 		x = room.GetCenter().GetX() - room.GetWidth() / 2;
@@ -598,9 +601,9 @@ void CreateGameMap()
 				if (roomNum == -1)
 				{
 					AddRoom(outX, outY);
-					roomNum = mazeMap.AddRoom();
+					roomNum = mazeMap->AddRoom();
 				}
-				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x, y + j), Point2D(outX, outY), i, roomNum, LEFT));
+				mazeMap->AddNodeToRoom(i, new RoomMapNode(new Point2D(x, y + j), new Point2D(outX, outY), i, roomNum, LEFT));
 			}
 		}
 		x = room.GetCenter().GetX() + room.GetWidth() / 2;
@@ -616,9 +619,9 @@ void CreateGameMap()
 				if (roomNum == -1)
 				{
 					AddRoom(outX, outY);
-					roomNum = mazeMap.AddRoom();
+					roomNum = mazeMap->AddRoom();
 				}
-				mazeMap.AddNodeToRoom(i, RoomMapNode(Point2D(x, y + j), Point2D(outX, outY), i, roomNum, RIGHT));
+				mazeMap->AddNodeToRoom(i, new RoomMapNode(new Point2D(x, y + j), new Point2D(outX, outY), i, roomNum, RIGHT));
 			}
 		}
 	}
@@ -741,14 +744,54 @@ void display()
 	glutSwapBuffers();// show what was drawn in "frame buffer"
 }
 
+void playTurn()
+{
+	players[(playerTurn++) % NUM_PLAYERS]->Play();
+	if (playerTurn%NUM_PLAYERS == 0) {
+		for (int i = 0; i < NUM_PLAYERS; i++)
+		{
+			printf("\t%d\t", i);
+		}
+		for (int i = 0; i < NUM_PLAYERS; i++)
+		{
+			printf("\t%d\t", players[i]->getHealth());
+		}
+		for (int i = 0; i < NUM_PLAYERS; i++)
+		{
+			printf("\t%d\t", players[i]->getMunitions());
+		}
+		for (int i = 0; i < NUM_PLAYERS; i++)
+		{
+			printf("\t%d\t", players[i]->getState());
+		}
+	}
+}
+
 void idle()
 {
+	if (play)
+		playTurn();
 	glutPostRedisplay();// calls indirectly to display
 }
 
 void Menu(int choice)
 {
+	switch (choice)
+	{
+	case 1:
+		play = true;
+		break;
+	}
+}
 
+#include <cstdlib>
+
+void exiting() {
+	for (int i = 0; i < NUM_PLAYERS; i++)
+	{
+		delete players[i];
+	}
+	delete mazeMap;
 }
 
 void main(int argc, char* argv[])
@@ -758,13 +801,15 @@ void main(int argc, char* argv[])
 	glutInitWindowSize(W, H);
 	glutInitWindowPosition(200, 100);
 	glutCreateWindow("Dungeon Generation - AI");
-
+	mazeMap = new MazeMap();
 	glutDisplayFunc(display); // refresh function
 	glutIdleFunc(idle); // idle: when nothing happens
 	init();
 
 	glutCreateMenu(Menu);
+	glutAddMenuEntry("Play", 1);
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 
 	glutMainLoop();
+	atexit(exiting);
 }

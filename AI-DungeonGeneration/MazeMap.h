@@ -10,11 +10,11 @@ public:
 	MazeMap();
 	~MazeMap();
 	int AddRoom();
-	void AddNodeToRoom(int roomNumber, RoomMapNode node);
-	RoomMap GetRoom(int index);
-	RoomMapNode FindPath(int fromRoom, int toRoom);
+	void AddNodeToRoom(int roomNumber, RoomMapNode *node);
+	RoomMap* GetRoom(int index);
+	RoomMapNode* FindPath(int fromRoom, int toRoom);
 private:
 	int numberOfRooms;
-	std::vector<RoomMap> arr;
+	std::vector<RoomMap*> arr;
 };
 

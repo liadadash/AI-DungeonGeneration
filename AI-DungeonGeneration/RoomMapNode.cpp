@@ -9,10 +9,12 @@ RoomMapNode::RoomMapNode()
 
 RoomMapNode::~RoomMapNode()
 {
+	delete fromRoomPoint;
+	delete toRoomPoint;
 }
 
 
-RoomMapNode::RoomMapNode(Point2D fromRoomPoint, Point2D toRoomPoint, int fromRoom, int toRoom, int direction)
+RoomMapNode::RoomMapNode(Point2D *fromRoomPoint, Point2D *toRoomPoint, int fromRoom, int toRoom, int direction)
 {
 	this->fromRoomPoint = fromRoomPoint;
 	this->toRoomPoint = toRoomPoint;
@@ -21,12 +23,12 @@ RoomMapNode::RoomMapNode(Point2D fromRoomPoint, Point2D toRoomPoint, int fromRoo
 	this->direction = direction;
 }
 
-Point2D RoomMapNode::GetFromPoint()
+Point2D* RoomMapNode::GetFromPoint()
 {
 	return fromRoomPoint;
 }
 
-Point2D RoomMapNode::GetToPoint()
+Point2D* RoomMapNode::GetToPoint()
 {
 	return toRoomPoint;
 }
