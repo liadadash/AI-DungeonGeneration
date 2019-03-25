@@ -1,6 +1,5 @@
 #include "AStar.h"
 
-extern MazeMap mazeMap;
 extern int maze[MSIZE][MSIZE];
 
 AStar::AStar()
@@ -14,7 +13,7 @@ AStar::~AStar()
 }
 
 
-AStar::AStar(Point2D &pos)
+AStar::AStar(Point2D *pos)
 {
 	myPos = pos;
 	lastTarget = Point2D(-1, -1);
@@ -22,19 +21,19 @@ AStar::AStar(Point2D &pos)
 
 int AStar::getDiraction(Point2D &p)
 {
-	if (myPos.GetX() != p.GetX())
+	if (myPos->GetX() != p.GetX())
 	{
-		if (myPos.GetX() > p.GetX())
-			return DOWN;
-		else
-			return UP;
-	}
-	else
-	{
-		if (myPos.GetY() > p.GetY())
+		if (myPos->GetX() > p.GetX())
 			return LEFT;
 		else
 			return RIGHT;
+	}
+	else
+	{
+		if (myPos->GetY() > p.GetY())
+			return DOWN;
+		else
+			return UP;
 	}
 }
 
@@ -45,7 +44,7 @@ void AStar::SetSolution(Point2D target)
 	std::priority_queue <Point2D_hg, std::vector <Point2D_hg>, ComparePoints> pq;
 	std::vector <Point2D_hg> black;
 	std::vector <Point2D_hg> gray;
-	bestPoint = Point2D_hg(myPos, target);
+	bestPoint = Point2D_hg(*myPos, target);
 	pq.emplace(bestPoint);
 	gray.push_back(bestPoint);
 	Point2D_hg *bestPointAsParent, neighborPos_hg;
@@ -122,13 +121,17 @@ void AStar::SetSolution(Point2D target)
 
 int AStar::run(Point2D target)
 {
-	if (!(lastTarget == target&&!solution.empty()))
+	if (!(lastTarget == target && !solution.empty()))
 	{
 		lastTarget = Point2D(target);
 		solution.clear();
 		SetSolution(lastTarget);
 	}
-	Point2D_hg best = solution.back();
-	solution.pop_back();
-	return getDiraction(best.getPoint());
+	if (!solution.empty())
+	{
+		Point2D_hg best = solution.back();
+		solution.pop_back();
+		return getDiraction(best.getPoint());;
+	}
+	return ERROR_DIR;
 }

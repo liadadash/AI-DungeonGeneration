@@ -14,9 +14,13 @@
 #include "Const.h"
 #include "Player.h"
 
+unsigned int microseconds = 200;
+
 char mazeTxt[20] = "maze.txt";
 
 using namespace std;
+
+const char *PlayerStateNames[] = { "", "Find enemy", "Fire", "Run away", "Health", "Munitions", "Died" };
 
 const int W = 1000; // window width
 const int H = 600; // window height
@@ -123,7 +127,7 @@ void SetPlayer()
 		}
 		if (canSet)
 		{
-			players[i] = new Player(Point2D(x, y), setInRoom[i], PLAYER1 + i);
+			players[i] = new Player(new Point2D(x, y), setInRoom[i], PLAYER1 + i);
 		}
 		else
 		{
@@ -585,7 +589,7 @@ void CreateGameMap()
 					AddRoom(outX, outY);
 					roomNum = mazeMap->AddRoom();
 				}
-				mazeMap->AddNodeToRoom(i,new RoomMapNode(new Point2D(x + j, y),new Point2D(outX, outY), i, roomNum, DOWN));
+				mazeMap->AddNodeToRoom(i, new RoomMapNode(new Point2D(x + j, y), new Point2D(outX, outY), i, roomNum, DOWN));
 			}
 		}
 		x = room.GetCenter().GetX() - room.GetWidth() / 2;
@@ -747,23 +751,30 @@ void display()
 void playTurn()
 {
 	players[(playerTurn++) % NUM_PLAYERS]->Play();
-	if (playerTurn%NUM_PLAYERS == 0) {
+	Sleep(microseconds);
+	if (playerTurn % NUM_PLAYERS == 0) {
+		playerTurn = 0;
 		for (int i = 0; i < NUM_PLAYERS; i++)
 		{
-			printf("\t%d\t", i);
+			printf("Player: %-10d\t  \t", i + 1);
 		}
+		printf("\n");
 		for (int i = 0; i < NUM_PLAYERS; i++)
 		{
-			printf("\t%d\t", players[i]->getHealth());
+			printf("Health: %-10d\t  \t", players[i]->getHealth());
 		}
+		printf("\n");
 		for (int i = 0; i < NUM_PLAYERS; i++)
 		{
-			printf("\t%d\t", players[i]->getMunitions());
+			printf("Munitions: %-10d\t  \t", players[i]->getMunitions());
 		}
+		printf("\n");
 		for (int i = 0; i < NUM_PLAYERS; i++)
 		{
-			printf("\t%d\t", players[i]->getState());
+			printf("State: %-10s\t  \t", PlayerStateNames[players[i]->getState()]);
 		}
+		printf("\n\n");
+		//play = false;
 	}
 }
 

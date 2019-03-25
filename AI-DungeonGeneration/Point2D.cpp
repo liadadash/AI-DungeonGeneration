@@ -36,3 +36,10 @@ bool Point2D::operator==(const Point2D& other)
 {
 	return x==other.x && y== other.y;
 }
+
+
+void Point2D::SetPos(int x,int y)
+{
+	this->x = x;
+	this->y = y;
+}

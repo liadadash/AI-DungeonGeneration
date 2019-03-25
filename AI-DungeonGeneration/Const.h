@@ -15,4 +15,4 @@ const int UP = 1;
 const int DOWN = 2;
 const int LEFT = 3;
 const int RIGHT = 4;
-
+const int ERROR_DIR = -1;

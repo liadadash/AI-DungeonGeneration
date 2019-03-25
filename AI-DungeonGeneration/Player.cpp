@@ -3,7 +3,7 @@
 extern int maze[MSIZE][MSIZE];
 extern Store health_stores[NUM_HEALTH_STORE];
 extern Store munitions_stores[NUM_MUNITIONS_STORE];
-extern MazeMap mazeMap;
+extern MazeMap* mazeMap;
 extern bool play;
 
 #define TOP_HEALTH 60
@@ -25,23 +25,26 @@ Player::Player()
 Player::~Player()
 {
 	delete astar;
+	delete position;
+	delete target;
 }
 
 
-Player::Player(Point2D &pos, int myRoom, int myColor)
+Player::Player(Point2D *pos, int myRoom, int myColor)
 {
-	this->position = TargetNode(myRoom, pos);
+	this->position = new TargetNode(myRoom, pos);
 	this->myColor = myColor;
+	target = NULL;
 	lastColor = SPACE;
 	state = NONE;
 	astar = new AStar(pos);
-	maze[pos.GetY()][pos.GetX()] = myColor;
+	maze[pos->GetY()][pos->GetX()] = myColor;
 	myHealth = MAX_HEALTH;
 	myMunitions = MAX_MUNITIONS;
 	minHealth = (rand() % (TOP_HEALTH - BUTTOM_HEALTH)) + BUTTOM_HEALTH;
 	minMunitions = (rand() % (TOP_MUNITIONS - BUTTOM_MUNITIONS)) + BUTTOM_MUNITIONS;
 	minHealthFireToKill = (rand() % (MIN_TOP_HEALTH - MIN_BUTTOM_HEALTH)) + MIN_BUTTOM_HEALTH;
-	enemyClose= (rand() % (TOP_ENEMY_CLOSE - BUTTOM_ENEMY_CLOSE)) + BUTTOM_ENEMY_CLOSE;
+	enemyClose = (rand() % (TOP_ENEMY_CLOSE - BUTTOM_ENEMY_CLOSE)) + BUTTOM_ENEMY_CLOSE;
 }
 
 
@@ -50,8 +53,8 @@ int Player::GetCloseHealth()
 	int minH, best, temp;
 	for (int i = 0; i < NUM_HEALTH_STORE; i++)
 	{
-		temp = abs(position.GetPosition().GetX() - health_stores[i].GetLocation().GetX()) +
-			abs(position.GetPosition().GetY() - health_stores[i].GetLocation().GetY());// Manhattan Distance
+		temp = abs(position->GetPosition()->GetX() - health_stores[i].GetLocation().GetX()) +
+			abs(position->GetPosition()->GetY() - health_stores[i].GetLocation().GetY());// Manhattan Distance
 		if (i == 0 || best > temp)
 		{
 			best = temp;
@@ -72,8 +75,8 @@ int Player::GetCloseMunitions()
 	int minH, best, temp;
 	for (int i = 0; i < NUM_MUNITIONS_STORE; i++)
 	{
-		temp = abs(position.GetPosition().GetX() - munitions_stores[i].GetLocation().GetX()) +
-			abs(position.GetPosition().GetY() - munitions_stores[i].GetLocation().GetY());// Manhattan Distance
+		temp = abs(position->GetPosition()->GetX() - munitions_stores[i].GetLocation().GetX()) +
+			abs(position->GetPosition()->GetY() - munitions_stores[i].GetLocation().GetY());// Manhattan Distance
 		if (i == 0 || best > temp)
 		{
 			best = temp;
@@ -85,12 +88,12 @@ int Player::GetCloseMunitions()
 
 int Player::getHealth()
 {
-	return health;
+	return myHealth;
 }
 
 int Player::getMunitions()
 {
-	return munitions;
+	return myMunitions;
 }
 
 PlayerState Player::getState()
@@ -100,11 +103,64 @@ PlayerState Player::getState()
 
 int Player::EnemyDistance()
 {
-	return abs(position.GetPosition().GetX() - (myEnemy->position.GetPosition().GetX())) +
-		abs(position.GetPosition().GetY() - (myEnemy->position.GetPosition().GetY()));// Manhattan Distance;
+	return abs(position->GetPosition()->GetX() - (myEnemy->position->GetPosition()->GetX())) +
+		abs(position->GetPosition()->GetY() - (myEnemy->position->GetPosition()->GetY()));// Manhattan Distance;
 }
 
+void Player::boom()
+{
+	int count = 0;
+	int x = position->GetPosition()->GetX(), y = position->GetPosition()->GetY();
+	for (int i = 1; i < START_FIRE; i++)
+	{
+		for (int j = 0; j < i * 2; j++)
+		{
+			if (x - i + j >= 0 && x - i + j < MSIZE - 1 && y + i < MSIZE - 1)//TOP
+			{
+				if (maze[y + i][x - i + j] == SPACE)
+					count++;
+			}
+			if (x + i < MSIZE - 1 && y + i - j>0 && y + i - j < MSIZE - 1)//RIGHT
+			{
+				if (maze[y + i - j][x + i] == SPACE)
+					count++;
+			}
+			if (x + i - j >= 0 && x + i - j < MSIZE - 1 && y - i >= 0)//BOTTOM
+			{
+				if (maze[y - i][x + i - j] == SPACE)
+					count++;
+			}
+			if (x - i >= 0 && y - i + j < MSIZE - 1 && y - i + j >= 0)//LEFT
+			{
+				if (maze[y - i][x + i - j] == SPACE)
+					count++;
+			}
+		}
+	}
 
+	if (count >= good) {
+		myHealth = myHealth - (rand() % MAX_GOOD);
+	}
+	else {
+		if (count >= mid) {
+			myHealth = myHealth - (rand() % MAX_MID);
+		}
+		else
+		{
+			if (count >= bad) {
+				myHealth = myHealth - (rand() % MAX_BAD);
+			}
+			else {
+				myHealth--;
+			}
+		}
+	}
+	if (myHealth < 0)
+	{
+		myHealth = 0;
+		play = false;
+	}
+}
 
 void Player::PlayDecision()
 {
@@ -153,7 +209,7 @@ void Player::PlayDecision()
 		else
 		{
 			if (myEnemy->myHealth < myHealth) {
-				if (myMunitions>minMunitions)
+				if (myMunitions > minMunitions)
 				{
 					if (EnemyDistance() <= enemyClose)
 					{
@@ -187,6 +243,125 @@ void Player::PlayDecision()
 	}
 }
 
+void Player::checkColor()
+{
+	switch (lastColor)
+	{
+	case HEALTH:
+		myHealth = MAX_HEALTH;
+		break;
+	case MUNITIONS:
+		myMunitions = MAX_MUNITIONS;
+		break;
+	default:
+		break;
+	}
+}
+
+void Player::runTo(Point2D p)
+{
+	position->GetPosition()->SetPos(p.GetX(), p.GetY());
+	lastColor = maze[p.GetY()][p.GetX()];
+	maze[p.GetY()][p.GetX()] = myColor;
+	checkColor();
+}
+
+void Player::goToDir(int dir)
+{
+	int x = position->GetPosition()->GetX(), y = position->GetPosition()->GetY();
+	maze[y][x] = lastColor;
+	int newX = x, newY = y;
+	switch (dir)
+	{
+	case UP:
+		newY++;
+		break;
+	case DOWN:
+		newY--;
+		break;
+	case LEFT:
+		newX--;
+		break;
+	case RIGHT:
+		newX++;
+		break;
+	default:
+		break;
+	}
+	runTo(Point2D(newX, newY));
+}
+
+void Player::runToEnemy()
+{
+	int dir, enemyRoom = myEnemy->position->GetRoom();
+	if (position->GetRoom() == enemyRoom)
+	{
+		dir = astar->run(*(myEnemy->position->GetPosition()));
+	}
+	else
+	{
+		RoomMapNode* node = mazeMap->FindPath(position->GetRoom(), enemyRoom);
+		delete target;
+		if (*(position->GetPosition()) == *(node->GetFromPoint())) {
+			target = new TargetNode(node->GetToRoom(), new Point2D(*(node->GetToPoint())));
+			position->SetRoom(node->GetToRoom());
+		}
+		else {
+			target = new TargetNode(node->GetToRoom(), new Point2D(*(node->GetFromPoint())));
+		}
+		dir = astar->run(*(target->GetPosition()));
+		delete node;
+	}
+	goToDir(dir);
+}
+
+void Player::runToHealth()
+{
+	int dir, healthStoreNum = GetCloseHealth();
+	int room = health_stores[healthStoreNum].GetRoomNumber();
+	if (position->GetRoom() == room)
+	{
+		dir = astar->run(health_stores[healthStoreNum].GetLocation());
+	}
+	else
+	{
+		RoomMapNode* node = mazeMap->FindPath(position->GetRoom(), room);
+		delete target;
+		if (*(position->GetPosition()) == *(node->GetFromPoint())) {
+			target = new TargetNode(room, new Point2D(*(node->GetToPoint())));
+		}
+		else {
+			target = new TargetNode(room, new Point2D(*(node->GetFromPoint())));
+		}
+		dir = astar->run(*(target->GetPosition()));
+	}
+	goToDir(dir);
+}
+
+
+void Player::runToMunitions()
+{
+	int dir, munitionsStoreNum = GetCloseMunitions();
+	int room = munitions_stores[munitionsStoreNum].GetRoomNumber();
+	if (position->GetRoom() == room)
+	{
+		dir = astar->run(munitions_stores[munitionsStoreNum].GetLocation());
+	}
+	else
+	{
+		RoomMapNode* node = mazeMap->FindPath(position->GetRoom(), room);
+		delete target;
+		if (*(position->GetPosition()) == *(node->GetFromPoint())) {
+			target = new TargetNode(room, new Point2D(*(node->GetToPoint())));
+		}
+		else {
+			target = new TargetNode(room, new Point2D(*(node->GetFromPoint())));
+		}
+		dir = astar->run(*(target->GetPosition()));
+	}
+	goToDir(dir);
+}
+
 
 void Player::Play()
 {
@@ -197,11 +372,41 @@ void Player::Play()
 	}
 	PlayerState lastState = state;
 	PlayDecision();
+	bool done = false;
 	if (lastState == state)
 	{
-
+		int dir = astar->run(*(target->GetPosition()));
+		if (dir != ERROR_DIR)
+		{
+			done = true;
+			goToDir(dir);
+		}
 	}
-	else {
-
+	if (!done)
+	{
+		switch (state)
+		{
+		case NONE:
+			break;
+		case RUN_TO_ENEMY:
+			runToEnemy();
+			break;
+		case FIRE:
+			myEnemy->boom();
+			break;
+		case RUN_AWAY:
+			break;
+		case HEALTH:
+			runToHealth();
+			break;
+		case MUNITIONS:
+			runToMunitions();
+			break;
+		case DIED:
+			myHealth = 0;
+			break;
+		default:
+			break;
+		}
 	}
 }

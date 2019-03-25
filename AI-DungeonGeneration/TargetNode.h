@@ -4,13 +4,14 @@ class TargetNode
 {
 public:
 	TargetNode();
-	TargetNode(int room, Point2D &pos);
+	TargetNode(int room, Point2D* pos);
 	~TargetNode();
 	int GetRoom();
-	Point2D GetPosition();
-	bool operator==(const TargetNode& other);
+	void SetRoom(int room);
+	Point2D* GetPosition();
+	bool operator==(const TargetNode* other);
 private:
 	int room;
-	Point2D pos;
+	Point2D* pos;
 };
 
