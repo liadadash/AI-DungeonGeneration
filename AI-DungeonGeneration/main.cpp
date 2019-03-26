@@ -752,7 +752,7 @@ void playTurn()
 {
 	players[(playerTurn++) % NUM_PLAYERS]->Play();
 	Sleep(microseconds);
-	if (playerTurn % NUM_PLAYERS == 0) {
+	if (playerTurn % NUM_PLAYERS == 0 || !play) {
 		playerTurn = 0;
 		for (int i = 0; i < NUM_PLAYERS; i++)
 		{

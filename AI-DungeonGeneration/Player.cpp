@@ -39,8 +39,8 @@ Player::Player(Point2D *pos, int myRoom, int myColor)
 	state = NONE;
 	astar = new AStar(pos);
 	maze[pos->GetY()][pos->GetX()] = myColor;
-	myHealth = 20;
-	myMunitions = 5;
+	myHealth = MAX_HEALTH;
+	myMunitions = MAX_MUNITIONS;
 	minHealth = (rand() % (TOP_HEALTH - BUTTOM_HEALTH)) + BUTTOM_HEALTH;
 	minMunitions = (rand() % (TOP_MUNITIONS - BUTTOM_MUNITIONS)) + BUTTOM_MUNITIONS;
 	minHealthFireToKill = (rand() % (MIN_TOP_HEALTH - MIN_BUTTOM_HEALTH)) + MIN_BUTTOM_HEALTH;
@@ -251,10 +251,10 @@ void Player::checkColor()
 {
 	switch (lastColor)
 	{
-	case HEALTH:
+	case HEALTH_COLOR:
 		myHealth = MAX_HEALTH;
 		break;
-	case MUNITIONS:
+	case MUNITIONS_COLOR:
 		myMunitions = MAX_MUNITIONS;
 		break;
 	default:
@@ -266,13 +266,14 @@ void Player::runTo(Point2D p)
 {
 	position->GetPosition()->SetPos(p.GetX(), p.GetY());
 	lastColor = maze[p.GetY()][p.GetX()];
-	maze[p.GetY()][p.GetX()] = myColor;
 	checkColor();
+	maze[p.GetY()][p.GetX()] = myColor;
 }
 
 void Player::goToDir(int dir)
 {
 	int x = position->GetPosition()->GetX(), y = position->GetPosition()->GetY();
+	checkColor();
 	maze[y][x] = lastColor;
 	int newX = x, newY = y;
 	switch (dir)
@@ -298,14 +299,16 @@ void Player::goToDir(int dir)
 void Player::runToEnemy()
 {
 	int dir, enemyRoom = myEnemy->position->GetRoom();
+	delete target;
+
 	if (position->GetRoom() == enemyRoom)
 	{
+		target = new TargetNode(enemyRoom, new Point2D(*(myEnemy->position->GetPosition())));
 		dir = astar->run(*(myEnemy->position->GetPosition()));
 	}
 	else
 	{
 		RoomMapNode* node = mazeMap->FindPath(position->GetRoom(), enemyRoom);
-		delete target;
 		if (*(position->GetPosition()) == *(node->GetFromPoint())) {
 			target = new TargetNode(node->GetToRoom(), new Point2D(*(node->GetToPoint())));
 			position->SetRoom(node->GetToRoom());
@@ -323,14 +326,16 @@ void Player::runToHealth()
 {
 	int dir, healthStoreNum = GetCloseHealth();
 	int room = health_stores[healthStoreNum].GetRoomNumber();
+	delete target;
+
 	if (position->GetRoom() == room)
 	{
+		target = new TargetNode(room, new Point2D(health_stores[healthStoreNum].GetLocation()));
 		dir = astar->run(health_stores[healthStoreNum].GetLocation());
 	}
 	else
 	{
 		RoomMapNode* node = mazeMap->FindPath(position->GetRoom(), room);
-		delete target;
 		if (*(position->GetPosition()) == *(node->GetFromPoint())) {
 			target = new TargetNode(room, new Point2D(*(node->GetToPoint())));
 			position->SetRoom(node->GetToRoom());
@@ -348,14 +353,16 @@ void Player::runToMunitions()
 {
 	int dir, munitionsStoreNum = GetCloseMunitions();
 	int room = munitions_stores[munitionsStoreNum].GetRoomNumber();
+	delete target;
+
 	if (position->GetRoom() == room)
 	{
+		target = new TargetNode(room, new Point2D(munitions_stores[munitionsStoreNum].GetLocation()));
 		dir = astar->run(munitions_stores[munitionsStoreNum].GetLocation());
 	}
 	else
 	{
 		RoomMapNode* node = mazeMap->FindPath(position->GetRoom(), room);
-		delete target;
 		if (*(position->GetPosition()) == *(node->GetFromPoint())) {
 			target = new TargetNode(room, new Point2D(*(node->GetToPoint())));
 			position->SetRoom(node->GetToRoom());
@@ -371,7 +378,7 @@ void Player::runToMunitions()
 
 void Player::Play()
 {
-	if (myHealth <= 0)
+	if (myHealth <= 0 || myEnemy->myHealth <= 0)
 	{
 		play = false;
 		return;
