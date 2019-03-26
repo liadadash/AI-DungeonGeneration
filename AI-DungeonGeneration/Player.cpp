@@ -39,8 +39,8 @@ Player::Player(Point2D *pos, int myRoom, int myColor)
 	state = NONE;
 	astar = new AStar(pos);
 	maze[pos->GetY()][pos->GetX()] = myColor;
-	myHealth = MAX_HEALTH;
-	myMunitions = MAX_MUNITIONS;
+	myHealth = 20;
+	myMunitions = 5;
 	minHealth = (rand() % (TOP_HEALTH - BUTTOM_HEALTH)) + BUTTOM_HEALTH;
 	minMunitions = (rand() % (TOP_MUNITIONS - BUTTOM_MUNITIONS)) + BUTTOM_MUNITIONS;
 	minHealthFireToKill = (rand() % (MIN_TOP_HEALTH - MIN_BUTTOM_HEALTH)) + MIN_BUTTOM_HEALTH;
@@ -239,6 +239,10 @@ void Player::PlayDecision()
 					}
 				}
 			}
+			else
+			{
+				state = HEALTH;
+			}
 		}
 	}
 }
@@ -329,6 +333,7 @@ void Player::runToHealth()
 		delete target;
 		if (*(position->GetPosition()) == *(node->GetFromPoint())) {
 			target = new TargetNode(room, new Point2D(*(node->GetToPoint())));
+			position->SetRoom(node->GetToRoom());
 		}
 		else {
 			target = new TargetNode(room, new Point2D(*(node->GetFromPoint())));
@@ -353,6 +358,7 @@ void Player::runToMunitions()
 		delete target;
 		if (*(position->GetPosition()) == *(node->GetFromPoint())) {
 			target = new TargetNode(room, new Point2D(*(node->GetToPoint())));
+			position->SetRoom(node->GetToRoom());
 		}
 		else {
 			target = new TargetNode(room, new Point2D(*(node->GetFromPoint())));

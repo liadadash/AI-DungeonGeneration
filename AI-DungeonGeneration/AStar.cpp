@@ -10,27 +10,29 @@ AStar::AStar()
 
 AStar::~AStar()
 {
+	delete lastTarget;
+	solution.clear();
 }
 
 
 AStar::AStar(Point2D *pos)
 {
 	myPos = pos;
-	lastTarget = Point2D(-1, -1);
+	lastTarget = new Point2D(-1, -1);
 }
 
-int AStar::getDiraction(Point2D &p)
+int AStar::getDiraction(Point2D *p)
 {
-	if (myPos->GetX() != p.GetX())
+	if (myPos->GetX() != p->GetX())
 	{
-		if (myPos->GetX() > p.GetX())
+		if (myPos->GetX() > p->GetX())
 			return LEFT;
 		else
 			return RIGHT;
 	}
 	else
 	{
-		if (myPos->GetY() > p.GetY())
+		if (myPos->GetY() > p->GetY())
 			return DOWN;
 		else
 			return UP;
@@ -62,7 +64,7 @@ void AStar::SetSolution(Point2D target)
 		if (bestPointPos == target) {
 			while (bestPointAsParent->getParent() != NULL)
 			{
-				solution.push_back(*bestPointAsParent);
+				solution.push_back(new Point2D(bestPointAsParent->getPoint()));
 				bestPointAsParent = bestPointAsParent->getParent();
 			}
 			break;
@@ -121,17 +123,20 @@ void AStar::SetSolution(Point2D target)
 
 int AStar::run(Point2D target)
 {
-	if (!(lastTarget == target && !solution.empty()))
+	if (!(*lastTarget == target && !solution.empty()))
 	{
-		lastTarget = Point2D(target);
+		delete lastTarget;
+		lastTarget = new Point2D(target);
 		solution.clear();
-		SetSolution(lastTarget);
+		SetSolution(*lastTarget);
 	}
 	if (!solution.empty())
 	{
-		Point2D_hg best = solution.back();
+		Point2D *best = solution.back();
 		solution.pop_back();
-		return getDiraction(best.getPoint());;
+		int dir = getDiraction(best);
+		delete best;
+		return dir;
 	}
 	return ERROR_DIR;
 }

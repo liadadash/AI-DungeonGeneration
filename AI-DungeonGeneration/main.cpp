@@ -363,7 +363,7 @@ void HealthStore()
 		}
 		if (canSet)
 		{
-			health_stores[i] = *(new Store(Point2D(storeX, storeY), setInRoom, health));
+			health_stores[i] = Store(Point2D(storeX, storeY), setInRoom, health);
 			maze[storeY][storeX] = HEALTH_COLOR;
 		}
 		else

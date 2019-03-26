@@ -17,8 +17,8 @@ public:
 	int run(Point2D target);
 private:
 	void AStar::SetSolution(Point2D target);
-	int getDiraction(Point2D &p);
-	Point2D* myPos,lastTarget;
-	std::vector <Point2D_hg> solution;
+	int getDiraction(Point2D *p);
+	Point2D* myPos,*lastTarget;
+	std::vector <Point2D*> solution;
 };
 
