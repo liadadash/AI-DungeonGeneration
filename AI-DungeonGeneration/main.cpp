@@ -14,7 +14,7 @@
 #include "Const.h"
 #include "Player.h"
 
-unsigned int microseconds = 200;
+unsigned int microseconds = 10; //200
 
 char mazeTxt[20] = "maze.txt";
 
@@ -24,7 +24,6 @@ const char *PlayerStateNames[] = { "", "Find enemy", "Fire", "Run away", "Health
 
 const int W = 1000; // window width
 const int H = 600; // window height
-const int NUM_ROOMS = 15;
 const int MAX_BLOCKS_IN_ROOM = 3;
 
 const int PLAYER1 = 6;

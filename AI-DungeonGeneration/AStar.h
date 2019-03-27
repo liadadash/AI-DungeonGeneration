@@ -21,4 +21,3 @@ private:
 	Point2D* myPos,*lastTarget;
 	std::vector <Point2D*> solution;
 };
-

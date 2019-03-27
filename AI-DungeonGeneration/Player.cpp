@@ -5,6 +5,8 @@ extern Store health_stores[NUM_HEALTH_STORE];
 extern Store munitions_stores[NUM_MUNITIONS_STORE];
 extern MazeMap* mazeMap;
 extern bool play;
+extern Room all_rooms[2 * NUM_ROOMS];
+extern int numberOfRoom;
 
 #define TOP_HEALTH 60
 #define BUTTOM_HEALTH 30
@@ -107,6 +109,137 @@ int Player::EnemyDistance()
 		abs(position->GetPosition()->GetY() - (myEnemy->position->GetPosition()->GetY()));// Manhattan Distance;
 }
 
+bool Player::iAmInRoom()
+{
+	int myRoomNum = position->GetRoom();
+	Point2D *myPos = position->GetPosition();
+	Room myRoom = all_rooms[myRoomNum];
+	if (myRoom.IsInRoom(myPos->GetX(), myPos->GetY()))
+	{
+		RoomMap *roomMap = mazeMap->GetRoom(myRoomNum);
+		for (int i = 0; i < roomMap->GetNumOfConn(); i++)
+		{
+			if ((*myPos) == (*roomMap->GetConnectedRooms().at(i)->GetFromPoint()))
+				return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+bool Player::iCanFire()
+{
+	int myRoomNum = position->GetRoom();
+	Point2D *myPos = position->GetPosition();
+	int enemyRoomNum = myEnemy->position->GetRoom();
+	Point2D *enemyPos = myEnemy->position->GetPosition();
+	Room myRoom = all_rooms[myRoomNum];
+	Room enemyRoom = all_rooms[enemyRoomNum];
+
+	if (myRoom.IsInRoom(myPos->GetX(), myPos->GetY()) && enemyRoom.IsInRoom(enemyPos->GetX(), enemyPos->GetY()))
+	{
+		int size;
+		if (myPos->GetX() == enemyPos->GetX())
+		{
+			size = abs(myPos->GetY() - enemyPos->GetY());
+			for (int i = 1; i < size; i++)
+			{
+				if (myPos->GetY() > enemyPos->GetY())
+				{
+					if (maze[myPos->GetY() - i][myPos->GetX()] == BLOCK)
+					{
+						return false;
+					}
+				}
+				else
+				{
+					if (maze[myPos->GetY() + i][myPos->GetX()] == BLOCK)
+					{
+						return false;
+					}
+				}
+
+			}
+		}
+		else
+		{
+			if (myPos->GetY() == enemyPos->GetY())
+			{
+				size = abs(myPos->GetX() - enemyPos->GetX());
+				for (int i = 1; i < size; i++)
+				{
+					if (myPos->GetX() > enemyPos->GetX())
+					{
+						if (maze[myPos->GetY()][myPos->GetX() - i] == BLOCK)
+						{
+							return false;
+						}
+					}
+					else
+					{
+						if (maze[myPos->GetY()][myPos->GetX() + i] == BLOCK)
+						{
+							return false;
+						}
+					}
+
+				}
+			}
+			else
+			{
+				bool done = false, doneX = false, doneY = false;
+				int x = 0, y = 0, checkX, checkY;
+				do
+				{
+					if (!doneX)
+					{
+						if (myPos->GetX() > enemyPos->GetX())
+						{
+							if (myPos->GetX() - x >= enemyPos->GetX())
+								checkX = myPos->GetX() + x--;
+							else
+								doneX = true;
+						}
+						else
+						{
+							if (myPos->GetX() + x <= enemyPos->GetX())
+								checkX = myPos->GetX() + x++;
+							else
+								doneX = true;
+						}
+					}
+
+					if (!doneY)
+					{
+						if (myPos->GetY() > enemyPos->GetY())
+						{
+							if (myPos->GetY() - y >= enemyPos->GetY())
+								checkY = myPos->GetY() + y--;
+							else
+								doneY = true;
+						}
+						else
+						{
+							if (myPos->GetY() + y <= enemyPos->GetY())
+								checkY = myPos->GetY() + y++;
+							else
+								doneY = true;
+						}
+					}
+
+					if (!doneX || !doneY)
+					{
+						if (maze[checkY][checkX] == BLOCK)
+							return false;
+					}
+				} while (!done);
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
 void Player::boom()
 {
 	int count = 0;
@@ -155,6 +288,7 @@ void Player::boom()
 			}
 		}
 	}
+	myMunitions--;
 	if (myHealth < 0)
 	{
 		myHealth = 0;
@@ -167,7 +301,7 @@ void Player::PlayDecision()
 	if (myHealth > minHealth) {
 		if (myMunitions > minMunitions)
 		{
-			if (EnemyDistance() < START_FIRE)
+			if (EnemyDistance() < START_FIRE && iCanFire())
 			{
 				state = FIRE;
 			}
@@ -188,17 +322,19 @@ void Player::PlayDecision()
 			{
 				if (myEnemy->myHealth <= minHealthFireToKill)
 				{
-					if (EnemyDistance() < START_FIRE)
+					if (EnemyDistance() < START_FIRE && iCanFire())
 					{
 						state = FIRE;
 					}
 					else
 					{
+
 						state = RUN_TO_ENEMY;
+
 					}
 				}
 				else {
-					state = RUN_AWAY;
+					state = RUN_TO_ENEMY;
 				}
 			}
 			else
@@ -213,7 +349,7 @@ void Player::PlayDecision()
 				{
 					if (EnemyDistance() <= enemyClose)
 					{
-						if (EnemyDistance() < START_FIRE)
+						if (EnemyDistance() < START_FIRE && iCanFire())
 						{
 							state = FIRE;
 						}
@@ -231,7 +367,7 @@ void Player::PlayDecision()
 				{
 					if (EnemyDistance() <= enemyClose)
 					{
-						state = RUN_AWAY;
+						state = RUN_TO_ENEMY;
 					}
 					else
 					{
@@ -376,17 +512,196 @@ void Player::runToMunitions()
 }
 
 
+void Player::runToSafePlace()
+{
+	Point2D* myPos = position->GetPosition();
+	Point2D* enemyPos = myEnemy->position->GetPosition();
+	Room room = all_rooms[position->GetRoom()];
+	if (iAmInRoom() && abs(myPos->GetX() - enemyPos->GetX()) > abs(myPos->GetY() - enemyPos->GetY()))
+	{
+		if (myPos->GetX() > enemyPos->GetX())
+		{
+			if (room.IsInRoom(myPos->GetX() + 1, myPos->GetY()))
+			{
+				goToDir(RIGHT);
+				return;
+			}
+			else
+			{
+				if (myPos->GetY() > enemyPos->GetY())
+				{
+					if (room.IsInRoom(myPos->GetX(), myPos->GetY() + 1))
+					{
+						goToDir(UP);
+						return;
+					}
+					if (room.IsInRoom(myPos->GetX(), myPos->GetY() - 1))
+					{
+						goToDir(DOWN);
+						return;
+					}
+				}
+				else
+				{
+					if (room.IsInRoom(myPos->GetX(), myPos->GetY() - 1))
+					{
+						goToDir(DOWN);
+						return;
+					}
+					if (room.IsInRoom(myPos->GetX(), myPos->GetY() + 1))
+					{
+						goToDir(UP);
+						return;
+					}
+				}
+			}
+		}
+		else
+		{
+			if (room.IsInRoom(myPos->GetX() - 1, myPos->GetY()))
+			{
+				goToDir(LEFT);
+				return;
+			}
+			else
+			{
+				if (myPos->GetY() > enemyPos->GetY())
+				{
+					if (room.IsInRoom(myPos->GetX(), myPos->GetY() + 1))
+					{
+						goToDir(UP);
+						return;
+					}
+					if (room.IsInRoom(myPos->GetX(), myPos->GetY() - 1))
+					{
+						goToDir(DOWN);
+						return;
+					}
+				}
+				else
+				{
+					if (room.IsInRoom(myPos->GetX(), myPos->GetY() - 1))
+					{
+						goToDir(DOWN);
+						return;
+					}
+					if (room.IsInRoom(myPos->GetX(), myPos->GetY() + 1))
+					{
+						goToDir(UP);
+						return;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		if (myPos->GetY() > enemyPos->GetY())
+		{
+			if (room.IsInRoom(myPos->GetX(), myPos->GetY() + 1))
+			{
+				goToDir(UP);
+				return;
+			}
+			else
+			{
+				if (myPos->GetX() > enemyPos->GetX())
+				{
+					if (room.IsInRoom(myPos->GetX() + 1, myPos->GetY()))
+					{
+						goToDir(RIGHT);
+						return;
+					}
+					if (room.IsInRoom(myPos->GetX() - 1, myPos->GetY()))
+					{
+						goToDir(LEFT);
+						return;
+					}
+				}
+				else
+				{
+					if (room.IsInRoom(myPos->GetX() - 1, myPos->GetY()))
+					{
+						goToDir(LEFT);
+						return;
+					}
+					if (room.IsInRoom(myPos->GetX() + 1, myPos->GetY()))
+					{
+						goToDir(RIGHT);
+						return;
+					}
+				}
+			}
+		}
+		else
+		{
+			if (room.IsInRoom(myPos->GetX(), myPos->GetY() - 1))
+			{
+				goToDir(DOWN);
+				return;
+			}
+			else
+			{
+				if (myPos->GetX() > enemyPos->GetX())
+				{
+					if (room.IsInRoom(myPos->GetX() + 1, myPos->GetY()))
+					{
+						goToDir(RIGHT);
+						return;
+					}
+					if (room.IsInRoom(myPos->GetX() - 1, myPos->GetY()))
+					{
+						goToDir(LEFT);
+						return;
+					}
+				}
+				else
+				{
+					if (room.IsInRoom(myPos->GetX() - 1, myPos->GetY()))
+					{
+						goToDir(LEFT);
+						return;
+					}
+					if (room.IsInRoom(myPos->GetX() + 1, myPos->GetY()))
+					{
+						goToDir(RIGHT);
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	delete target;
+	int dir;
+	if (position->GetRoom() < numberOfRoom - 1)
+	{
+		target = new TargetNode(position->GetRoom() + 1, new Point2D(all_rooms[position->GetRoom() + 1].GetCenter()));
+		dir = astar->run(all_rooms[position->GetRoom() + 1].GetCenter());
+	}
+	else
+	{
+		target = new TargetNode(position->GetRoom() - 1, new Point2D(all_rooms[position->GetRoom() - 1].GetCenter()));
+		dir = astar->run(all_rooms[position->GetRoom() - 1].GetCenter());
+	}
+}
+
+
 void Player::Play()
 {
 	if (myHealth <= 0 || myEnemy->myHealth <= 0)
 	{
+		if (myHealth <= 0)
+			maze[position->GetPosition()->GetY()][position->GetPosition()->GetX()] = SPACE;
+		else
+			maze[position->GetPosition()->GetY()][position->GetPosition()->GetX()] = myColor;
 		play = false;
 		return;
 	}
 	PlayerState lastState = state;
 	PlayDecision();
 	bool done = false;
-	if (lastState == state)
+	if (lastState == state && target != NULL &&  state != FIRE)
 	{
 		int dir = astar->run(*(target->GetPosition()));
 		if (dir != ERROR_DIR)
@@ -408,6 +723,7 @@ void Player::Play()
 			myEnemy->boom();
 			break;
 		case RUN_AWAY:
+			runToSafePlace();
 			break;
 		case HEALTH:
 			runToHealth();

@@ -14,4 +14,3 @@ private:
 	int room;
 	Point2D* pos;
 };
-

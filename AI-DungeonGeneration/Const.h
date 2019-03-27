@@ -1,5 +1,7 @@
 #pragma once
 
+const int NUM_ROOMS = 15;
+
 const int SPACE = 1;
 const int WALL = 2;
 const int HEALTH_COLOR = 3;

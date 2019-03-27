@@ -35,6 +35,9 @@ public:
 	int getMunitions();
 	PlayerState getState();
 private:
+	bool iAmInRoom();
+	bool iCanFire();
+	void runToSafePlace();
 	void runToHealth();
 	void runToMunitions();
 	void runTo(Point2D p);
